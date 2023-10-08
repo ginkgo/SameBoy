@@ -19,7 +19,7 @@ static inline uint16_t bounce_for_key(GB_gameboy_t *gb, GB_key_t key)
     return 0xFFF;
 }
 
-static inline bool get_input(GB_gameboy_t *gb, uint8_t player, GB_key_t key)
+static inline bool get_input(const GB_gameboy_t *gb, uint8_t player, GB_key_t key)
 {
     if (player != 0) {
         return gb->keys[player][key];
@@ -114,6 +114,16 @@ void GB_icd_set_joyp(GB_gameboy_t *gb, uint8_t value)
         }
     }
     gb->io_registers[GB_IO_JOYP] |= 0xC0;
+}
+
+GB_key_mask_t GB_get_key_mask(const GB_gameboy_t *gb)
+{
+	GB_key_mask_t m = 0;
+	for (int i = 0; i < GB_KEY_MAX; ++i)
+	{
+		m |= (get_input(gb,0,i) ? (1<<i) : 0);
+	}
+	return m;
 }
 
 void GB_set_key_state(GB_gameboy_t *gb, GB_key_t index, bool pressed)

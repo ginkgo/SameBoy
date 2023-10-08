@@ -28,6 +28,8 @@ typedef enum {
 // For example, for player 2's (0-based; logical player 3) A button, use GB_MASK_FOR_PLAYER(GB_KEY_A_MASK, 2)
 #define GB_MASK_FOR_PLAYER(mask, player) ((x) << (player * 8))
 
+GB_key_mask_t GB_get_key_mask(const GB_gameboy_t *gb);
+
 void GB_set_key_state(GB_gameboy_t *gb, GB_key_t index, bool pressed);
 void GB_set_key_state_for_player(GB_gameboy_t *gb, GB_key_t index, unsigned player, bool pressed);
 void GB_set_key_mask(GB_gameboy_t *gb, GB_key_mask_t mask);
