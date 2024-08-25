@@ -606,7 +606,8 @@ static const uint8_t *get_header_bank(GB_gameboy_t *gb)
 }
 
 static int save_state_internal(GB_gameboy_t *gb, virtual_file_t *file, bool append_bess)
-{	
+{
+    GB_apu_run(gb, true);
     sanitize_state(gb);
 	
     if (file->write(file, GB_GET_SECTION(gb, header), GB_SECTION_SIZE(header)) != GB_SECTION_SIZE(header)) goto error;
