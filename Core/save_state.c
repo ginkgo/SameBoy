@@ -490,8 +490,8 @@ static void sanitize_state(GB_gameboy_t *gb)
 static bool dump_section(virtual_file_t *file, const void *src, uint32_t size, const char* section_name, bool print)
 {
 	if (print)
-{
-		printf("Dumping section %s, CRC32=%08x\n", section_name, calc_crc32(size, (uint8_t*)src));
+	{
+		printf("Dumping section %s, CRC32=%08x, size=%dB\n", section_name, calc_crc32(size, (uint8_t*)src), size);
 	}
 
     if (file->write(file, &size, sizeof(size)) != sizeof(size)) {
@@ -606,7 +606,9 @@ static const uint8_t *get_header_bank(GB_gameboy_t *gb)
 }
 
 static int save_state_internal(GB_gameboy_t *gb, virtual_file_t *file, bool append_bess)
-{
+{	
+    sanitize_state(gb);
+	
     if (file->write(file, GB_GET_SECTION(gb, header), GB_SECTION_SIZE(header)) != GB_SECTION_SIZE(header)) goto error;
     if (!DUMP_SECTION(gb, append_bess, file, core_state)) goto error;
     if (!DUMP_SECTION(gb, append_bess, file, dma       )) goto error;
@@ -900,7 +902,7 @@ error:
 }
 
 int GB_save_state(GB_gameboy_t *gb, const char *path)
-{
+{	
     GB_ASSERT_NOT_RUNNING(gb)
     FILE *f = fopen(path, "wb");
     if (!f) {
@@ -947,8 +949,8 @@ void GB_save_state_to_buffer_no_bess(GB_gameboy_t *gb, uint8_t *buffer)
     assert(file.position == GB_get_save_state_size_no_bess(gb));
 }
 
-static bool read_section(virtual_file_t *file, void *dest, uint32_t size, bool fix_broken_windows_saves)
-{
+static bool read_section(virtual_file_t *file, void *dest, uint32_t size, bool fix_broken_windows_saves, const char* section_name, bool print)
+{	
     uint32_t saved_size = 0;
     if (file->read(file, &saved_size, sizeof(size)) != sizeof(size)) {
         return false;
@@ -973,6 +975,15 @@ static bool read_section(virtual_file_t *file, void *dest, uint32_t size, bool f
         }
         file->seek(file, saved_size - size, SEEK_CUR);
     }
+	
+	if (print)
+	{
+		printf("Reading section %s, CRC32=%08x, size=%dB, saved_size=%dB\n",
+			   section_name,
+			   calc_crc32(size, (uint8_t*)dest),
+			   size,
+			   saved_size);
+	}
     
     return true;
 }
@@ -1372,7 +1383,7 @@ static int load_state_internal(GB_gameboy_t *gb, virtual_file_t *file)
     if (gb->magic != save.magic) {
         return load_bess_save(gb, file, false);
     }
-#define READ_SECTION(gb, file, section) read_section(file, GB_GET_SECTION(gb, section), GB_SECTION_SIZE(section), fix_broken_windows_saves)
+#define READ_SECTION(gb, file, section) read_section(file, GB_GET_SECTION(gb, section), GB_SECTION_SIZE(section), fix_broken_windows_saves, #section, true)
     if (!READ_SECTION(&save, file, core_state)) return errno ?: EIO;
     if (!READ_SECTION(&save, file, dma       )) return errno ?: EIO;
     if (!READ_SECTION(&save, file, mbc       )) return errno ?: EIO;
@@ -1393,7 +1404,7 @@ static int load_state_internal(GB_gameboy_t *gb, virtual_file_t *file)
     }
     
     if (GB_is_hle_sgb(gb)) {
-        if (!read_section(file, gb->sgb, sizeof(*gb->sgb), false)) return errno ?: EIO;
+        if (!read_section(file, gb->sgb, sizeof(*gb->sgb), false, "sgb", true)) return errno ?: EIO;
     }
     
     memset(gb->mbc_ram + save.mbc_ram_size, 0xFF, gb->mbc_ram_size - save.mbc_ram_size);
