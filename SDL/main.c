@@ -847,7 +847,7 @@ static void issue_trace_packet()
 		if (!context)
 		{
 			context = zmq_ctx_new();
-			requester = zmq_socket(context, ZMQ_REQ);
+			requester = zmq_socket(context, ZMQ_PUSH);
 			zmq_connect (requester, "tcp://localhost:1989");
 		}
 
@@ -887,7 +887,6 @@ static void issue_trace_packet()
 		trace_packet__pack(&trace_packet, packed_msg);
 
 		zmq_send (requester, packed_msg, packed_size, ZMQ_DONTWAIT);
-		zmq_recv (requester, 0,0,0);
 
 		free(packed_msg);
 		free(start_state);
