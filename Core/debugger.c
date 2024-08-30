@@ -2064,7 +2064,7 @@ static bool undo(GB_gameboy_t *gb, char *arguments, char *modifiers, const debug
     return true;
 }
 
-#ifndef DISABLE_REWIND
+#ifndef GB_DISABLE_REWIND
 static bool backstep(GB_gameboy_t *gb, char *arguments, char *modifiers, const debugger_command_t *command)
 {
     NO_MODIFIERS
@@ -2131,7 +2131,7 @@ static const debugger_command_t commands[] = {
     {"next", 1, next, "Run the next instruction, skipping over function calls"},
     {"step", 1, step, "Run the next instruction, stepping into function calls"},
     {"finish", 1, finish, "Run until the current function returns"},
-#ifndef DISABLE_REWIND
+#ifndef GB_DISABLE_REWIND
     {"backstep", 5, backstep, "Step one instruction backwards, assuming constant inputs"},
     {"bs", 2, }, /* Alias */
 #endif
@@ -2575,7 +2575,7 @@ next_command:
 }
 void GB_debugger_run(GB_gameboy_t *gb)
 {
-#ifndef DISABLE_REWIND
+#ifndef GB_DISABLE_REWIND
     if (gb->rewind_sequences && gb->rewind_sequences[gb->rewind_pos].key_state) {
         typeof(gb->rewind_sequences[0]) *sequence = &gb->rewind_sequences[gb->rewind_pos];
         sequence->instruction_count[sequence->pos]++;

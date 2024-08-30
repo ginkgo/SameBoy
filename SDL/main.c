@@ -832,6 +832,19 @@ static void debugger_reload_callback(GB_gameboy_t *gb)
     GB_reset(gb);
 }
 
+void print_buffer(uint8_t* buffer, size_t size, const char* name)
+{
+	printf("%s(%lu bytes):\n", name, size);
+	for (size_t i = 0; i < size; ++i) {
+		printf("%02x", buffer[i]);
+		
+		if ((i+1) % 64 == 0) {
+			printf("\n");
+		}
+	}
+	printf("\n");
+}
+
 static void issue_trace_packet()
 {
 	static uint8_t inputs[20*60];
@@ -860,6 +873,20 @@ static void issue_trace_packet()
 		start_state = malloc(start_state_size);
 		GB_save_state_to_buffer(&gb, start_state);
 
+		print_buffer((void*)GB_get_registers(&gb), sizeof(GB_registers_t), "REGFILE");
+
+		{
+			size_t size;
+			void* buffer = GB_get_direct_access(&gb, GB_DIRECT_ACCESS_RAM, &size, 0);
+			print_buffer(buffer, size, "WRAM");
+		}
+
+		{
+			size_t size = GB_save_battery_size(&gb);
+			void* buffer = GB_get_direct_access(&gb, GB_DIRECT_ACCESS_CART_RAM, 0, 0);
+			print_buffer(buffer, size, "CART_RAM");
+		}
+		
 		frame_count = 0;
 		has_active_trace_packet = true;
 	}
@@ -928,8 +955,8 @@ restart:
         }
     }
     else {
-        GB_init(&gb, model);
 		GB_random_set_enabled(false);
+        GB_init(&gb, model);
 		GB_set_emulate_joypad_bouncing(&gb, false);
         
         GB_set_boot_rom_load_callback(&gb, load_boot_rom);
